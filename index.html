@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#101426" />
+  <title>Heróis em Ação: Ben 10 & Unicórnios Mágicos (16-Bit HD)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="game-wrapper">
+    <!-- Main Game Canvas -->
+    <canvas id="game-canvas" width="1280" height="720"></canvas>
+
+    <!-- Top-Right Utility Bar (Sound, Fullscreen, Character Swap Menu) -->
+    <div id="top-utility-bar">
+      <button id="btn-quick-roster" class="util-btn" title="Escolher Herói">
+        <span class="util-icon">⌚🦄</span>
+        <span class="util-label">HERÓIS</span>
+      </button>
+      <button id="btn-sound" class="util-btn" title="Som / Música">
+        <span id="sound-icon">🔊</span>
+      </button>
+      <button id="btn-fullscreen" class="util-btn" title="Tela Cheia">
+        <span>⛶</span>
+      </button>
+    </div>
+
+    <!-- Kid-Friendly Giant Touch Controls Overlay -->
+    <div id="touch-controls" aria-label="Controles do Jogo">
+      <!-- Left Side: Forgiving Virtual Joystick + D-Pad Ring -->
+      <div id="joystick-zone">
+        <div id="joystick-base">
+          <div class="dpad-arrow up">▲</div>
+          <div class="dpad-arrow down">▼</div>
+          <div class="dpad-arrow left">◀</div>
+          <div class="dpad-arrow right">▶</div>
+          <div id="joystick-stick"></div>
+        </div>
+        <div class="control-caption">ANDAR</div>
+      </div>
+
+      <!-- Right Side: Giant Colorful Action Buttons for Kids -->
+      <div id="action-buttons">
+        <button id="btn-swap" class="action-btn btn-omnitrix" aria-label="Transformar ou Trocar Herói">
+          <span class="btn-emoji">⌚✨</span>
+          <span class="btn-text">TROCAR</span>
+        </button>
+
+        <button id="btn-jump" class="action-btn btn-jump" aria-label="Pular">
+          <span class="btn-emoji">⬆️</span>
+          <span class="btn-text">PULAR</span>
+        </button>
+
+        <button id="btn-special" class="action-btn btn-special" aria-label="Super Poder ou Super Chifrada">
+          <span class="btn-emoji" id="special-btn-emoji">🔥</span>
+          <span class="btn-text" id="special-btn-text">PODER!</span>
+        </button>
+
+        <button id="btn-attack" class="action-btn btn-attack" aria-label="Golpe ou Chifrada">
+          <span class="btn-emoji" id="attack-btn-emoji">👊</span>
+          <span class="btn-text" id="attack-btn-text">GOLPE</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Title & Character Select Screen Modal -->
+    <div id="menu-overlay" class="overlay active">
+      <div class="menu-card">
+        <div class="title-banner">
+          <div class="badge-retro">PIXEL ART 16-BIT HD</div>
+          <h1>BEN 10 <span class="amp">&amp;</span> UNICÓRNIOS</h1>
+          <h2>AVENTURA PELOS MUNDOS!</h2>
+        </div>
+
+        <p class="menu-subtitle">Escolha seu Herói ou Unicórnio favorito! (Troque a qualquer hora durante a fase!)</p>
+
+        <div class="roster-sections">
+          <div class="roster-group">
+            <h3 class="group-title ben10-title">⌚ HERÓIS DO OMNITRIX</h3>
+            <div id="roster-ben10" class="roster-grid"></div>
+          </div>
+
+          <div class="roster-group">
+            <h3 class="group-title unicorn-title">🦄 UNICÓRNIOS DE CHIFRADA MÁGICA</h3>
+            <div id="roster-unicorns" class="roster-grid"></div>
+          </div>
+        </div>
+
+        <div class="stage-select-bar">
+          <span class="stage-select-label">🗺️ CENÁRIO INICIAL:</span>
+          <div id="stage-pills" class="stage-pills"></div>
+        </div>
+
+        <button id="btn-start-game" class="big-play-btn">
+          ▶ COMEÇAR AVENTURA!
+        </button>
+      </div>
+    </div>
+
+    <!-- In-Game Quick Character Picker Modal -->
+    <div id="quick-picker-overlay" class="overlay hidden">
+      <div class="menu-card compact-card">
+        <h2>⌚✨ ESCOLHA QUEM VAI ENTRAR EM AÇÃO!</h2>
+        <div id="quick-roster-grid" class="quick-roster-grid"></div>
+        <button id="btn-close-picker" class="big-play-btn secondary-btn">VOLTAR AO JOGO</button>
+      </div>
+    </div>
+
+    <!-- Stage Clear / Victory Modal -->
+    <div id="stage-clear-overlay" class="overlay hidden">
+      <div class="menu-card victory-card">
+        <div class="victory-stars">⭐🌟⭐</div>
+        <h1 id="victory-title">FASE CONCLUÍDA!</h1>
+        <p id="victory-desc">Você derrotou os vilões e salvou o cenário!</p>
+        <div id="victory-stats" class="victory-stats"></div>
+        <div class="victory-actions">
+          <button id="btn-next-stage" class="big-play-btn">PRÓXIMA FASE ➔</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/assets_data.js"></script>
+  <script src="js/pixel_engine.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/characters.js"></script>
+  <script src="js/stages.js"></script>
+  <script src="js/enemies.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
