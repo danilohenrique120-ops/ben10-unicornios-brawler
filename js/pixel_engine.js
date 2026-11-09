@@ -18,7 +18,17 @@ class PixelArtEngine {
     }
     if (callback) this.onReadyCallbacks.push(callback);
 
-    const assets = window.PIXEL_ASSETS || {};
+    const defaultAssetPaths = {
+      heroes_sheet: 'assets/heroes_sheet.jpg',
+      enemies_sheet: 'assets/enemies_sheet.jpg',
+      city_bg: 'assets/city_bg.jpg',
+      forest_bg: 'assets/forest_bg.jpg',
+      snow_bg: 'assets/snow_bg.jpg',
+      volcano_bg: 'assets/volcano_bg.jpg',
+      bridge_bg: 'assets/bridge_bg.jpg',
+      castle_bg: 'assets/castle_bg.jpg'
+    };
+    const assets = window.PIXEL_ASSETS || defaultAssetPaths;
     const keys = Object.keys(assets);
     if (keys.length === 0) return;
 
