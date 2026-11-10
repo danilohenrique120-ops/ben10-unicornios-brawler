@@ -1,134 +1,231 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#101426" />
-  <title>Heróis em Ação: Ben 10 & Unicórnios Mágicos (16-Bit HD)</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0b0e1a">
+  <title>Arcade Kids Hub - Escolha seu Jogo!</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      background: radial-gradient(circle at 50% 20%, #1e293b 0%, #0f172a 60%, #020617 100%);
+      font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+      color: #fff;
+    }
+    .wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+      animation: fadeInDown 0.6s ease-out;
+    }
+    .badge {
+      display: inline-block;
+      background: #22c55e;
+      color: #052e16;
+      font-weight: 900;
+      font-size: 13px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+    }
+    h1 {
+      font-size: clamp(28px, 6vw, 44px);
+      font-weight: 900;
+      color: #facc15;
+      text-shadow: 0 4px 0 #000, 0 8px 24px rgba(250, 204, 21, 0.35);
+      letter-spacing: 1px;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    p.subtitle {
+      font-size: clamp(14px, 3.5vw, 18px);
+      color: #94a3b8;
+    }
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 32px;
+    }
+    .game-card {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border: 4px solid #334155;
+      border-radius: 28px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5), 0 4px 0 #0f172a;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      cursor: pointer;
+      position: relative;
+    }
+    .game-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      border-color: #facc15;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 24px rgba(250, 204, 21, 0.4);
+    }
+    .game-card:active {
+      transform: translateY(-2px) scale(0.99);
+    }
+    .card-banner {
+      height: 190px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .banner-ben10 {
+      background: radial-gradient(circle, #16a34a 0%, #064e3b 100%);
+    }
+    .banner-boxing {
+      background: radial-gradient(circle, #3b82f6 0%, #1e3a8a 100%);
+    }
+    .banner-icon {
+      font-size: 72px;
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .game-card:hover .banner-icon {
+      transform: scale(1.15) rotate(5deg);
+    }
+    .card-content {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+    .card-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-desc {
+      font-size: 14px;
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin-bottom: 18px;
+      flex-grow: 1;
+    }
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .tag {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #facc15;
+    }
+    .btn-play {
+      background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+      border: 3px solid #111827;
+      border-radius: 18px;
+      padding: 12px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 900;
+      color: #052e16;
+      box-shadow: 0 4px 0 #111827;
+      letter-spacing: 0.5px;
+    }
+    .footer {
+      text-align: center;
+      font-size: 13px;
+      color: #64748b;
+      margin-top: auto;
+    }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-  <div id="game-wrapper">
-    <!-- Main Game Canvas -->
-    <canvas id="game-canvas" width="1280" height="720"></canvas>
-
-    <!-- Top-Right Utility Bar (Sound, Fullscreen, Character Swap Menu) -->
-    <div id="top-utility-bar">
-      <button id="btn-quick-roster" class="util-btn" title="Escolher Herói">
-        <span class="util-icon">⌚🦄</span>
-        <span class="util-label">HERÓIS</span>
-      </button>
-      <button id="btn-sound" class="util-btn" title="Som / Música">
-        <span id="sound-icon">🔊</span>
-      </button>
-      <button id="btn-fullscreen" class="util-btn" title="Tela Cheia">
-        <span>⛶</span>
-      </button>
+  <div class="wrapper">
+    <div class="header">
+      <div class="badge">ARCADE KIDS PORTAL</div>
+      <h1>ESCOLHA SEU JOGO!</h1>
+      <p class="subtitle">Jogos divertidos, fáceis de jogar no celular, tablet ou PC</p>
     </div>
 
-    <!-- Kid-Friendly Giant Touch Controls Overlay -->
-    <div id="touch-controls" aria-label="Controles do Jogo">
-      <!-- Left Side: Forgiving Virtual Joystick + D-Pad Ring -->
-      <div id="joystick-zone">
-        <div id="joystick-base">
-          <div class="dpad-arrow up">▲</div>
-          <div class="dpad-arrow down">▼</div>
-          <div class="dpad-arrow left">◀</div>
-          <div class="dpad-arrow right">▶</div>
-          <div id="joystick-stick"></div>
+    <div class="games-grid">
+      <!-- Jogo 1: Ben 10 e Unicórnios Brawler -->
+      <a href="ben10/index.html" class="game-card">
+        <div class="card-banner banner-ben10">
+          <div class="banner-icon">⌚🦄</div>
         </div>
-        <div class="control-caption">ANDAR</div>
-      </div>
-
-      <!-- Right Side: Giant Colorful Action Buttons for Kids -->
-      <div id="action-buttons">
-        <button id="btn-swap" class="action-btn btn-omnitrix" aria-label="Transformar ou Trocar Herói">
-          <span class="btn-emoji">⌚✨</span>
-          <span class="btn-text">TROCAR</span>
-        </button>
-
-        <button id="btn-jump" class="action-btn btn-jump" aria-label="Pular">
-          <span class="btn-emoji">⬆️</span>
-          <span class="btn-text">PULAR</span>
-        </button>
-
-        <button id="btn-special" class="action-btn btn-special" aria-label="Super Poder ou Super Chifrada">
-          <span class="btn-emoji" id="special-btn-emoji">🔥</span>
-          <span class="btn-text" id="special-btn-text">PODER!</span>
-        </button>
-
-        <button id="btn-attack" class="action-btn btn-attack" aria-label="Golpe ou Chifrada">
-          <span class="btn-emoji" id="attack-btn-emoji">👊</span>
-          <span class="btn-text" id="attack-btn-text">GOLPE</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Title & Character Select Screen Modal -->
-    <div id="menu-overlay" class="overlay active">
-      <div class="menu-card">
-        <div class="title-banner">
-          <div class="badge-retro">PIXEL ART 16-BIT HD</div>
-          <h1>BEN 10 <span class="amp">&amp;</span> UNICÓRNIOS</h1>
-          <h2>AVENTURA PELOS MUNDOS!</h2>
-        </div>
-
-        <p class="menu-subtitle">Escolha seu Herói ou Unicórnio favorito! (Troque a qualquer hora durante a fase!)</p>
-
-        <div class="roster-sections">
-          <div class="roster-group">
-            <h3 class="group-title ben10-title">⌚ HERÓIS DO OMNITRIX</h3>
-            <div id="roster-ben10" class="roster-grid"></div>
+        <div class="card-content">
+          <div class="card-title">Ben 10 &amp; Unicórnios</div>
+          <div class="card-desc">
+            Brawler arcade 16-Bit retrô! Lute com Chama, Quatro Braços, XLR8, Diamante e 4 Unicórnios Mágicos com poderes de chifrada por 6 fases coloridas!
           </div>
-
-          <div class="roster-group">
-            <h3 class="group-title unicorn-title">🦄 UNICÓRNIOS DE CHIFRADA MÁGICA</h3>
-            <div id="roster-unicorns" class="roster-grid"></div>
+          <div class="card-tags">
+            <span class="tag">🎮 16-Bit Arcade</span>
+            <span class="tag">🏙️ 6 Mundos</span>
+            <span class="tag">💥 Super Poderes</span>
           </div>
+          <div class="btn-play">▶ JOGAR BEN 10</div>
         </div>
+      </a>
 
-        <div class="stage-select-bar">
-          <span class="stage-select-label">🗺️ CENÁRIO INICIAL:</span>
-          <div id="stage-pills" class="stage-pills"></div>
+      <!-- Jogo 2: Super Punch 3D Luva Mola -->
+      <a href="boxing-glove/index.html" class="game-card">
+        <div class="card-banner banner-boxing">
+          <div class="banner-icon">🥊⚡</div>
         </div>
-
-        <button id="btn-start-game" class="big-play-btn">
-          ▶ COMEÇAR AVENTURA!
-        </button>
-      </div>
+        <div class="card-content">
+          <div class="card-title">Super Punch 3D</div>
+          <div class="card-desc">
+            Toque na tela e dispare a luva de boxe montada na mola telescópica! Acerte os bonecos de pano malucos na privada, mesa e sofás com física ragdoll divertida e modos infinitos!
+          </div>
+          <div class="card-tags">
+            <span class="tag">🥊 Luva Mola 3D</span>
+            <span class="tag">🤪 Física Ragdoll</span>
+            <span class="tag">♾️ Fases Infinitas</span>
+          </div>
+          <div class="btn-play" style="background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%); color: #082f49;">▶ JOGAR SOCO MOLA</div>
+        </div>
+      </a>
     </div>
 
-    <!-- In-Game Quick Character Picker Modal -->
-    <div id="quick-picker-overlay" class="overlay hidden">
-      <div class="menu-card compact-card">
-        <h2>⌚✨ ESCOLHA QUEM VAI ENTRAR EM AÇÃO!</h2>
-        <div id="quick-roster-grid" class="quick-roster-grid"></div>
-        <button id="btn-close-picker" class="big-play-btn secondary-btn">VOLTAR AO JOGO</button>
-      </div>
-    </div>
-
-    <!-- Stage Clear / Victory Modal -->
-    <div id="stage-clear-overlay" class="overlay hidden">
-      <div class="menu-card victory-card">
-        <div class="victory-stars">⭐🌟⭐</div>
-        <h1 id="victory-title">FASE CONCLUÍDA!</h1>
-        <p id="victory-desc">Você derrotou os vilões e salvou o cenário!</p>
-        <div id="victory-stats" class="victory-stats"></div>
-        <div class="victory-actions">
-          <button id="btn-next-stage" class="big-play-btn">PRÓXIMA FASE ➔</button>
-        </div>
-      </div>
+    <div class="footer">
+      Toque no jogo desejado para abrir em tela cheia • Controles simples para crianças
     </div>
   </div>
-
-  <script src="js/assets_data.js"></script>
-  <script src="js/pixel_engine.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/characters.js"></script>
-  <script src="js/stages.js"></script>
-  <script src="js/enemies.js"></script>
-  <script src="js/game.js"></script>
 </body>
 </html>
