@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#e0f2fe">
-  <title>Super Punch 3D - Soco Luva Mola!</title>
+  <meta name="theme-color" content="#dbeafe">
+  <title>Super Punch 3D - Luva Mola!</title>
   <style>
     * {
       box-sizing: border-box;
@@ -17,259 +17,261 @@
       -webkit-touch-callout: none;
       touch-action: none;
     }
-    body, html {
+    html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #dbeafe;
+      background: #cfe3f6;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     }
     #game-container {
       position: relative;
       width: 100%;
       height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #e2e8f0;
+      overflow: hidden;
     }
     canvas {
       width: 100%;
       height: 100%;
       display: block;
     }
-    /* UI Overlay */
+
+    /* Screen-wide HUD Layer */
     #ui-layer {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
       pointer-events: none;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: clamp(14px, 2.5vw, 28px);
+      padding: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      z-index: 20;
     }
+
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      pointer-events: auto;
-      gap: 12px;
+      gap: 10px;
+      pointer-events: none;
     }
     .left-controls {
       display: flex;
       align-items: center;
       gap: 10px;
+      pointer-events: auto;
     }
     .btn-icon {
-      width: clamp(52px, 6vw, 68px);
-      height: clamp(52px, 6vw, 68px);
-      background: linear-gradient(135deg, #38bdf8, #0284c7);
-      border: 3.5px solid #ffffff;
+      width: clamp(48px, 6.2vw, 64px);
+      height: clamp(48px, 6.2vw, 64px);
+      background: linear-gradient(145deg, #38bdf8, #0284c7);
+      border: 3px solid #ffffff;
       border-radius: 18px;
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: clamp(24px, 3vw, 32px);
+      font-size: clamp(22px, 3vw, 30px);
       cursor: pointer;
-      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
-      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35), inset 0 2px 2px rgba(255,255,255,0.45);
+      transition: transform 0.1s;
       text-decoration: none;
     }
     .btn-icon:active {
       transform: scale(0.92);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    .level-badge {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(8px);
-      padding: clamp(8px, 1.2vw, 14px) clamp(20px, 3.5vw, 36px);
-      border-radius: 999px;
-      font-size: clamp(20px, 2.8vw, 30px);
-      font-weight: 900;
-      color: #334155;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.8);
-      border: 3px solid #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      letter-spacing: 0.5px;
-    }
-    .coin-badge {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(8px);
-      padding: clamp(8px, 1.2vw, 14px) clamp(16px, 2.5vw, 24px);
-      border-radius: 999px;
-      font-size: clamp(18px, 2.4vw, 26px);
-      font-weight: 900;
-      color: #d97706;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-      border: 3px solid #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
 
-    /* Bottom Modes Bar - Otimizado para Tablet e Celular */
-    .bottom-controls-wrap {
-      pointer-events: auto;
+    .level-pill {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      padding: clamp(6px, 1vw, 10px) clamp(18px, 3vw, 34px);
+      border-radius: 999px;
+      border: 3px solid #ffffff;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+    }
+    .level-num {
+      font-size: clamp(19px, 2.7vw, 28px);
+      font-weight: 900;
+      color: #1e293b;
+      line-height: 1.05;
+    }
+    .level-theme {
+      font-size: clamp(11px, 1.4vw, 14px);
+      font-weight: 800;
+      color: #0284c7;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .coin-badge {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      padding: clamp(8px, 1.2vw, 12px) clamp(14px, 2.2vw, 22px);
+      border-radius: 999px;
+      font-size: clamp(18px, 2.4vw, 25px);
+      font-weight: 900;
+      color: #d97706;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+      border: 3px solid #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    /* Bottom Modes Bar - Tablet & Phone Friendly */
+    .bottom-controls-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
       width: 100%;
     }
-    .quick-aim-tip {
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(6px);
-      color: #f8fafc;
-      font-size: clamp(13px, 1.8vw, 16px);
-      font-weight: 700;
-      padding: 6px 18px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.25);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
     .modes-scroll {
+      pointer-events: auto;
       display: flex;
-      gap: clamp(8px, 1.4vw, 14px);
+      gap: clamp(8px, 1.3vw, 14px);
       overflow-x: auto;
       max-width: 100%;
-      padding: clamp(8px, 1.2vw, 12px) clamp(12px, 1.8vw, 20px);
-      background: rgba(255, 255, 255, 0.9);
+      padding: clamp(7px, 1vw, 10px) clamp(10px, 1.6vw, 16px);
+      background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(12px);
-      border-radius: 28px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.12), inset 0 2px 0 #ffffff;
-      border: 3px solid rgba(255,255,255,0.8);
+      border-radius: 26px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.15), inset 0 2px 0 #ffffff;
+      border: 2.5px solid rgba(255,255,255,0.85);
       scrollbar-width: none;
     }
     .modes-scroll::-webkit-scrollbar { display: none; }
     .mode-btn {
-      padding: clamp(10px, 1.3vw, 14px) clamp(16px, 2vw, 22px);
-      background: #f8fafc;
-      border: 2.5px solid #cbd5e1;
-      border-radius: 20px;
-      font-size: clamp(14px, 1.6vw, 17px);
+      min-height: 44px;
+      padding: clamp(8px, 1.1vw, 12px) clamp(14px, 1.8vw, 20px);
+      background: #f1f5f9;
+      border: 2px solid #cbd5e1;
+      border-radius: 18px;
+      font-size: clamp(13px, 1.55vw, 16px);
       font-weight: 800;
       color: #334155;
       white-space: nowrap;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       transition: transform 0.1s, background 0.15s, border-color 0.15s;
     }
-    .mode-btn:active {
-      transform: scale(0.95);
-    }
+    .mode-btn:active { transform: scale(0.94); }
     .mode-btn.active {
       background: linear-gradient(135deg, #ef4444, #dc2626);
       border-color: #991b1b;
       color: #ffffff;
-      box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+      box-shadow: 0 5px 14px rgba(220, 38, 38, 0.4);
     }
 
-    /* Target Reticle - Exatamente como no vídeo */
+    /* Reticle */
     #reticle {
       position: absolute;
-      width: clamp(60px, 8vw, 84px);
-      height: clamp(60px, 8vw, 84px);
+      width: clamp(58px, 7.5vw, 82px);
+      height: clamp(58px, 7.5vw, 82px);
       border: 4px dashed #ef4444;
       border-radius: 50%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(1);
       pointer-events: none;
-      display: none;
-      box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
-      animation: rotateReticle 3s linear infinite;
-      z-index: 50;
+      opacity: 0;
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.55);
+      z-index: 40;
+      transition: opacity 0.18s ease-out;
+    }
+    #reticle.visible {
+      opacity: 1;
+      animation: reticleSpin 2.5s linear infinite;
     }
     #reticle::after {
       content: '';
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 10px;
-      height: 10px;
+      width: 11px;
+      height: 11px;
       background: #ef4444;
       border-radius: 50%;
       transform: translate(-50%, -50%);
-      box-shadow: 0 0 10px #ef4444;
+      box-shadow: 0 0 8px #ef4444;
     }
-    @keyframes rotateReticle {
+    @keyframes reticleSpin {
       from { transform: translate(-50%, -50%) rotate(0deg); }
       to { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
-    /* Screen Flash Effect on Massive Hit */
+    /* Non-blocking Level Clear & Next Level Banner */
+    #stage-toast {
+      position: absolute;
+      top: 22%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.7);
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #ffffff;
+      padding: clamp(12px, 2vw, 18px) clamp(26px, 4.5vw, 46px);
+      border-radius: 999px;
+      border: 4px solid #ffffff;
+      box-shadow: 0 16px 36px rgba(22, 163, 74, 0.45);
+      font-size: clamp(22px, 3.8vw, 36px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-shadow: 0 3px 0 rgba(0,0,0,0.25);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 55;
+      white-space: nowrap;
+      transition: opacity 0.25s ease, transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #stage-toast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Smooth Level Transition Curtain */
+    #transition-curtain {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(219,234,254,0.98) 100%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.24s ease-in-out;
+      z-index: 70;
+    }
+    #transition-curtain.active {
+      opacity: 1;
+    }
+
+    /* Screen Flash on Heavy Punch */
     #impact-flash {
       position: absolute;
       inset: 0;
-      background: rgba(255, 255, 255, 0.7);
+      background: radial-gradient(circle, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.25) 100%);
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.08s ease-out;
-      z-index: 60;
+      z-index: 50;
     }
 
-    /* Victory Modal Screen */
-    #win-overlay {
+    /* Floating Comic Hit Text (+1, POW!, BAM!) */
+    .hit-floating-text {
       position: absolute;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(8px);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      color: #fff;
-      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      padding: 16px;
-    }
-    .win-card {
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      color: #1e293b;
-      padding: clamp(24px, 4vw, 42px) clamp(28px, 5vw, 48px);
-      border-radius: 36px;
-      text-align: center;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.4), inset 0 2px 0 #ffffff;
-      border: 4px solid #facc15;
-      max-width: 90%;
-      width: clamp(340px, 45vw, 460px);
-    }
-    .win-card h2 {
-      font-size: clamp(26px, 4vw, 36px);
+      pointer-events: none;
       font-weight: 900;
-      color: #dc2626;
-      margin-bottom: 8px;
+      font-size: clamp(24px, 3.8vw, 38px);
+      color: #facc15;
+      text-shadow: -2px -2px 0 #111827, 2px -2px 0 #111827, -2px 2px 0 #111827, 2px 2px 0 #111827, 0 5px 12px rgba(0,0,0,0.4);
+      transform: translate(-50%, -50%);
+      z-index: 45;
+      animation: floatPop 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
-    .win-card p {
-      font-size: clamp(15px, 2.2vw, 19px);
-      color: #64748b;
-      font-weight: 600;
-      margin-bottom: 24px;
-    }
-    .btn-next {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: #fff;
-      border: none;
-      padding: clamp(14px, 2vw, 20px) 32px;
-      border-radius: 24px;
-      font-size: clamp(18px, 2.5vw, 24px);
-      font-weight: 900;
-      cursor: pointer;
-      width: 100%;
-      box-shadow: 0 8px 24px rgba(34, 197, 94, 0.45);
-      transition: transform 0.1s;
-      letter-spacing: 0.5px;
-    }
-    .btn-next:active { transform: scale(0.96); }
-    @keyframes popIn {
-      from { opacity: 0; transform: scale(0.85); }
-      to { opacity: 1; transform: scale(1); }
+    @keyframes floatPop {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-8deg); }
+      25% { opacity: 1; transform: translate(-50%, -70%) scale(1.25) rotate(5deg); }
+      100% { opacity: 0; transform: translate(-50%, -145%) scale(0.95) rotate(-3deg); }
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -278,7 +280,9 @@
 <body>
   <div id="game-container">
     <div id="impact-flash"></div>
+    <div id="transition-curtain"></div>
     <div id="reticle"></div>
+    <div id="stage-toast">⭐ NOCAUTE! ⭐</div>
 
     <div id="ui-layer">
       <div class="top-bar">
@@ -287,7 +291,10 @@
           <button id="btn-sound" class="btn-icon" title="Ligar/Desligar Som">🔊</button>
         </div>
 
-        <div class="level-badge" id="level-display">Level 21</div>
+        <div class="level-pill">
+          <div class="level-num" id="level-display">Level 1</div>
+          <div class="level-theme" id="level-theme">Banheiro</div>
+        </div>
 
         <div class="coin-badge">
           <span>🏺</span>
@@ -296,7 +303,6 @@
       </div>
 
       <div class="bottom-controls-wrap">
-        <div class="quick-aim-tip">👆 Toque no boneco para socar e lançar!</div>
         <div class="modes-scroll" id="modes-bar">
           <button class="mode-btn active" data-mode="normal">🥊 Luva Vermelha</button>
           <button class="mode-btn" data-mode="gold">🏆 Luva Dourada</button>
@@ -307,17 +313,11 @@
         </div>
       </div>
     </div>
-
-    <div id="win-overlay">
-      <div class="win-card">
-        <div style="font-size: clamp(48px, 8vw, 70px); margin-bottom: 8px;">⭐🎉⭐</div>
-        <h2>NOCAUTE PERFEITO!</h2>
-        <p id="win-message">O boneco voou para longe!</p>
-        <button class="btn-next" id="btn-next-level">PRÓXIMA FASE ➔</button>
-      </div>
-    </div>
   </div>
 
+  <script src="textures.js"></script>
+  <script src="ragdoll.js"></script>
+  <script src="scenarios.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
