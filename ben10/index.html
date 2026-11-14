@@ -7,6 +7,11 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#101426" />
   <title>Heróis em Ação: Ben 10 & Unicórnios Mágicos (16-Bit HD)</title>
+  <script>
+    if (location.protocol.indexOf('http') === 0 && !location.pathname.endsWith('/') && !location.pathname.endsWith('.html')) {
+      location.replace(location.pathname + '/' + location.search + location.hash);
+    }
+  </script>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>

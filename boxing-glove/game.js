@@ -143,17 +143,17 @@ function initGame() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.12;
+  renderer.toneMappingExposure = 1.02;
   container.appendChild(renderer.domElement);
 
   // Studio reflection environment for realistic leather, chrome & porcelain highlights
   scene.environment = window.PunchTextures.createStudioEnvMap(renderer);
 
-  // Three-point natural daylight setup
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0xcbd5e1, 0.78);
+  // Three-point natural daylight setup with rich contrast & crisp shadows
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 0.58);
   scene.add(hemiLight);
 
-  const keyLight = new THREE.DirectionalLight(0xfffbeb, 1.15);
+  const keyLight = new THREE.DirectionalLight(0xfffbeb, 1.25);
   keyLight.position.set(6, 13, 8);
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.width = 2048;
@@ -200,23 +200,24 @@ function initGame() {
 }
 
 // Responsive Framing for Portrait Phones, Tablets (iPad/Android), and Desktops
+// Keeps the entire boxing glove clearly visible ABOVE the bottom mode bar!
 function updateResponsiveCamera() {
   const aspect = window.innerWidth / window.innerHeight;
   if (aspect < 0.75) {
     // Portrait phone / narrow tablet
     camera.fov = 56;
     camera.position.set(0, 2.55, 8.2);
-    gloveBasePos.set(0.62, 0.65, 5.7);
+    gloveBasePos.set(0.55, 1.18, 5.15);
   } else if (aspect < 1.15) {
     // Portrait / square-ish tablet (like iPad in video!)
     camera.fov = 50;
     camera.position.set(0, 2.4, 7.5);
-    gloveBasePos.set(0.72, 0.72, 5.15);
+    gloveBasePos.set(0.65, 1.22, 4.75);
   } else {
     // Landscape tablet / desktop
     camera.fov = 44;
     camera.position.set(0, 2.25, 7.0);
-    gloveBasePos.set(0.85, 0.75, 4.75);
+    gloveBasePos.set(0.75, 1.18, 4.45);
   }
   camera.aspect = aspect;
   camera.updateProjectionMatrix();
@@ -224,6 +225,9 @@ function updateResponsiveCamera() {
 
   if (!isPunching) {
     currentGloveWorldPos.copy(gloveBasePos);
+    if (gloveMesh) {
+      updateGloveAndSpringTransform(0);
+    }
   }
 }
 

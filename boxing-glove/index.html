@@ -7,6 +7,11 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#dbeafe">
   <title>Super Punch 3D - Luva Mola!</title>
+  <script>
+    if (location.protocol.indexOf('http') === 0 && !location.pathname.endsWith('/') && !location.pathname.endsWith('.html')) {
+      location.replace(location.pathname + '/' + location.search + location.hash);
+    }
+  </script>
   <style>
     * {
       box-sizing: border-box;

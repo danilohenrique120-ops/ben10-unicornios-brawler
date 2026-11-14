@@ -228,30 +228,47 @@ window.PunchScenarios = (() => {
         const cushionMat = new THREE.MeshStandardMaterial({ color: 0x14b8a6, roughness: 0.72 });
         const pillowMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.65 });
 
-        // Cozy rounded sofa
+        // Cozy rounded sofa with seat cushions & wooden legs
         const sofa = new THREE.Group();
-        const base = makeRoundedBlock(3.8, 0.55, 1.4, 0.14, fabricMat);
-        base.position.set(0, 0.35, -2.2);
-        const back = makeRoundedBlock(3.8, 1.1, 0.35, 0.14, fabricMat);
-        back.position.set(0, 0.9, -2.75);
-        const armL = makeRoundedBlock(0.42, 0.8, 1.4, 0.14, fabricMat);
-        armL.position.set(-1.75, 0.62, -2.2);
-        const armR = makeRoundedBlock(0.42, 0.8, 1.4, 0.14, fabricMat);
-        armR.position.set(1.75, 0.62, -2.2);
-        sofa.add(base, back, armL, armR);
+        const woodLegMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.5 });
+        const base = makeRoundedBlock(3.8, 0.42, 1.4, 0.12, fabricMat);
+        base.position.set(0, 0.34, -2.2);
+        const cushion1 = makeRoundedBlock(1.48, 0.22, 1.22, 0.08, cushionMat);
+        cushion1.position.set(-0.76, 0.6, -2.14);
+        const cushion2 = makeRoundedBlock(1.48, 0.22, 1.22, 0.08, cushionMat);
+        cushion2.position.set(0.76, 0.6, -2.14);
+        const back = makeRoundedBlock(3.8, 1.08, 0.36, 0.14, fabricMat);
+        back.position.set(0, 0.96, -2.75);
+        const armL = makeRoundedBlock(0.42, 0.78, 1.4, 0.14, fabricMat);
+        armL.position.set(-1.75, 0.66, -2.2);
+        const armR = makeRoundedBlock(0.42, 0.78, 1.4, 0.14, fabricMat);
+        armR.position.set(1.75, 0.66, -2.2);
+        [[-1.7, -2.7], [1.7, -2.7], [-1.7, -1.7], [1.7, -1.7]].forEach(([lx, lz]) => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 0.16, 10), woodLegMat);
+          leg.position.set(lx, 0.08, lz);
+          leg.castShadow = true;
+          sofa.add(leg);
+        });
+        sofa.add(base, cushion1, cushion2, back, armL, armR);
 
         // Rounded throw pillow (punchable!)
         const pillow = makeRoundedBlock(0.55, 0.5, 0.25, 0.1, pillowMat);
-        pillow.position.set(-1.1, 0.88, -2.25);
+        pillow.position.set(-1.1, 0.94, -2.25);
         pillow.rotation.z = 0.22;
         markDynamicProp(pillow, dyn, 0.5);
         sofa.add(pillow);
 
-        // Coffee table + mug in front
+        // Coffee table with wooden legs + mug in front
         const oakMat = new THREE.MeshStandardMaterial({ map: window.PunchTextures.getWoodTexture('#92400e', '#451a03', 4), roughness: 0.35 });
         const cTable = makeRoundedBlock(1.9, 0.12, 0.95, 0.04, oakMat);
         cTable.position.set(0.2, 0.55, -0.4);
         sofa.add(cTable);
+        [[-0.6, -0.75], [1.0, -0.75], [-0.6, -0.05], [1.0, -0.05]].forEach(([tx, tz]) => {
+          const tLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.035, 0.5, 10), woodLegMat);
+          tLeg.position.set(tx, 0.25, tz);
+          tLeg.castShadow = true;
+          sofa.add(tLeg);
+        });
 
         const mug = buildMug(0xef4444);
         mug.position.set(0.4, 0.72, -0.35);
