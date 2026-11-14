@@ -17,118 +17,8 @@ let currentLevel = 1;
 let coins = 50;
 let currentMode = 'normal'; // normal, gold, turbo, heavy, gravity, giant
 
-let audioCtx = null;
-let isMuted = false;
 let screenShake = 0;
 let hitStopUntil = 0;
-
-// ================== WEB AUDIO SYNTHESIZER ==================
-function initAudio() {
-  if (!audioCtx) {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (AudioCtx) audioCtx = new AudioCtx();
-  }
-  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-}
-
-function playSpringWhoosh(fast = false) {
-  if (isMuted) return;
-  initAudio();
-  if (!audioCtx) return;
-  const now = audioCtx.currentTime;
-  const dur = fast ? 0.1 : 0.16;
-
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(190, now);
-  osc.frequency.exponentialRampToValueAtTime(880, now + dur);
-
-  gain.gain.setValueAtTime(0.22, now);
-  gain.gain.exponentialRampToValueAtTime(0.005, now + dur);
-
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start(now);
-  osc.stop(now + dur);
-}
-
-function playHeavyImpact(heavy = false) {
-  if (isMuted) return;
-  initAudio();
-  if (!audioCtx) return;
-  const now = audioCtx.currentTime;
-
-  // Deep punch thud
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(heavy ? 115 : 155, now);
-  osc.frequency.exponentialRampToValueAtTime(28, now + 0.28);
-  gain.gain.setValueAtTime(heavy ? 0.8 : 0.6, now);
-  gain.gain.exponentialRampToValueAtTime(0.005, now + 0.3);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start(now);
-  osc.stop(now + 0.3);
-
-  // Leather slap crack
-  const len = Math.floor(audioCtx.sampleRate * 0.12);
-  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-  const ch = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.35));
-
-  const src = audioCtx.createBufferSource();
-  src.buffer = buf;
-  const filt = audioCtx.createBiquadFilter();
-  filt.type = 'bandpass';
-  filt.frequency.value = 1100;
-  const nGain = audioCtx.createGain();
-  nGain.gain.setValueAtTime(0.55, now);
-  nGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-
-  src.connect(filt);
-  filt.connect(nGain);
-  nGain.connect(audioCtx.destination);
-  src.start(now);
-}
-
-function playPropClatter() {
-  if (isMuted) return;
-  initAudio();
-  if (!audioCtx) return;
-  const now = audioCtx.currentTime;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'square';
-  osc.frequency.setValueAtTime(420 + Math.random() * 180, now);
-  osc.frequency.exponentialRampToValueAtTime(140, now + 0.1);
-  gain.gain.setValueAtTime(0.14, now);
-  gain.gain.exponentialRampToValueAtTime(0.005, now + 0.1);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start(now);
-  osc.stop(now + 0.1);
-}
-
-function playLevelClearChime() {
-  if (isMuted) return;
-  initAudio();
-  if (!audioCtx) return;
-  [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
-    const t = audioCtx.currentTime + i * 0.08;
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(freq, t);
-    g.gain.setValueAtTime(0.22, t);
-    g.gain.exponentialRampToValueAtTime(0.005, t + 0.22);
-    osc.connect(g);
-    g.connect(audioCtx.destination);
-    osc.start(t);
-    osc.stop(t + 0.22);
-  });
-}
 
 // ================== INITIALIZATION ==================
 function initGame() {
@@ -192,8 +82,9 @@ function initGame() {
   setupModes();
 
   document.getElementById('btn-sound').addEventListener('click', () => {
-    isMuted = !isMuted;
-    document.getElementById('btn-sound').textContent = isMuted ? '🔇' : '🔊';
+    window.PunchAudio.init();
+    const mutedNow = window.PunchAudio.toggleMute();
+    document.getElementById('btn-sound').textContent = mutedNow ? '🔇' : '🔊';
   });
 
   requestAnimationFrame(animate);
@@ -427,6 +318,7 @@ function loadLevel(lvl) {
 
   document.getElementById('level-display').textContent = `Level ${lvl}`;
   document.getElementById('level-theme').textContent = currentScenario.themeName;
+  window.PunchAudio.setLevel(lvl);
   isTransitioning = false;
 }
 
@@ -434,7 +326,7 @@ function advanceToNextLevelAutomatically() {
   if (isTransitioning) return;
   isTransitioning = true;
 
-  playLevelClearChime();
+  window.PunchAudio.playStageClear(currentLevel + 1);
 
   const toast = document.getElementById('stage-toast');
   const cheers = ['⭐ NOCAUTE! ⭐', '💥 PERFEITO! 💥', '🎉 PRÓXIMO! 🎉', '🥊 MANDOU BEM! 🥊'];
@@ -445,6 +337,7 @@ function advanceToNextLevelAutomatically() {
   setTimeout(() => {
     const curtain = document.getElementById('transition-curtain');
     curtain.classList.add('active');
+    window.PunchAudio.playStageTransitionWhoosh();
 
     setTimeout(() => {
       toast.classList.remove('show');
@@ -527,7 +420,7 @@ function launchFluidPunch(screenX, screenY) {
 
   const isTurbo = currentMode === 'turbo';
   const isHeavy = currentMode === 'heavy' || currentMode === 'giant';
-  playSpringWhoosh(isTurbo);
+  window.PunchAudio.playPunchLaunch(currentMode);
 
   // Offset stop point slightly in front of target surface so glove knuckles connect cleanly
   const dirToTarget = new THREE.Vector3().subVectors(targetPoint, gloveBasePos).normalize();
@@ -564,6 +457,7 @@ function launchFluidPunch(screenX, screenY) {
           // Step 3: Elastic Spring Recoil back to resting pose
           const recoilDelay = hitSomething ? 45 : 0;
           setTimeout(() => {
+            window.PunchAudio.playSpringRecoil(currentMode);
             const retractFrom = currentGloveWorldPos.clone();
             new TWEEN.Tween({ t: 0 })
               .to({ t: 1 }, 240 * speedScale)
@@ -653,7 +547,7 @@ function processImpactAt(hitPos, punchDir, screenX, screenY) {
   });
 
   if (hitEnemyCount > 0) {
-    playHeavyImpact(currentMode === 'heavy' || currentMode === 'giant');
+    window.PunchAudio.playImpact(currentMode, hitEnemyCount);
     screenShake = currentMode === 'heavy' || currentMode === 'giant' ? 20 : 13;
     hitStopUntil = performance.now() + 45;
 
@@ -669,7 +563,7 @@ function processImpactAt(hitPos, punchDir, screenX, screenY) {
     spawnComicHitText(screenX, screenY);
     return true;
   } else if (hitPropCount > 0) {
-    playPropClatter();
+    window.PunchAudio.playPropHit();
     screenShake = 6;
     createShockwave(hitPos);
     createImpactBurst(hitPos, 0xffffff, 8);
@@ -754,7 +648,7 @@ function setupTouchAndInteraction() {
 
   container.addEventListener('pointerdown', (e) => {
     if (e.target.closest('#ui-layer')) return;
-    initAudio();
+    window.PunchAudio.init();
     showReticleAt(e.clientX, e.clientY);
     launchFluidPunch(e.clientX, e.clientY);
   });
@@ -771,10 +665,12 @@ function setupModes() {
   const btns = document.querySelectorAll('.mode-btn');
   btns.forEach(btn => {
     btn.addEventListener('click', () => {
+      window.PunchAudio.init();
       btns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentMode = btn.dataset.mode;
       applyGloveMode(currentMode);
+      window.PunchAudio.playModeSelect(currentMode);
     });
   });
 }
@@ -835,7 +731,13 @@ function animate(now) {
 
   // Update Ragdolls (breathing, blinking, waving & ragdoll flight)
   enemies.forEach(en => {
-    window.PunchRagdoll.updateEnemyAnimation(en, timeSec, rawDt, gravity);
+    window.PunchRagdoll.updateEnemyAnimation(
+      en,
+      timeSec,
+      rawDt,
+      gravity,
+      window.PunchAudio.playRagdollBounce
+    );
   });
 
   // Update launched interactive props (bowling pins, mugs, beach balls, etc.)

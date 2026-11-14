@@ -363,7 +363,7 @@ window.PunchRagdoll = (() => {
   }
 
   // Animate breathing, blinking, waving & ragdoll flying
-  function updateEnemyAnimation(enemy, timeSec, dt, gravity) {
+  function updateEnemyAnimation(enemy, timeSec, dt, gravity, onBounce) {
     const ud = enemy.userData;
     if (!ud.isHit) {
       const t = timeSec * 2.4 + ud.animOffset;
@@ -401,11 +401,15 @@ window.PunchRagdoll = (() => {
 
     // Bounce off floor
     if (enemy.position.y < 0.45 && ud.velocity.y < 0) {
+      const impactSpeed = Math.abs(ud.velocity.y);
       enemy.position.y = 0.45;
       ud.velocity.y *= -0.52;
       ud.velocity.x *= 0.8;
       ud.velocity.z *= 0.8;
       ud.rotVelocity.multiplyScalar(0.75);
+      if (onBounce && impactSpeed > 2.2) {
+        onBounce(Math.min(1, impactSpeed / 14));
+      }
     }
 
     // Limbs flailing organically in flight
