@@ -207,17 +207,17 @@ function updateResponsiveCamera() {
     // Portrait phone / narrow tablet
     camera.fov = 56;
     camera.position.set(0, 2.55, 8.2);
-    gloveBasePos.set(0.55, 1.18, 5.15);
+    gloveBasePos.set(0.55, 1.08, 4.75);
   } else if (aspect < 1.15) {
     // Portrait / square-ish tablet (like iPad in video!)
     camera.fov = 50;
     camera.position.set(0, 2.4, 7.5);
-    gloveBasePos.set(0.65, 1.22, 4.75);
+    gloveBasePos.set(0.68, 1.12, 4.25);
   } else {
     // Landscape tablet / desktop
     camera.fov = 44;
     camera.position.set(0, 2.25, 7.0);
-    gloveBasePos.set(0.75, 1.18, 4.45);
+    gloveBasePos.set(0.82, 1.10, 3.95);
   }
   camera.aspect = aspect;
   camera.updateProjectionMatrix();
@@ -264,62 +264,66 @@ function buildSculptedBoxingGloveAndSpring() {
   });
 
   gloveMesh = new THREE.Group();
+  const gloveVisual = new THREE.Group();
+  // Rotate visual 180 deg around Y so local +Z is the front knuckles (matching Three.js Object3D.lookAt)
+  gloveVisual.rotation.y = Math.PI;
+  gloveMesh.add(gloveVisual);
 
   // 1. Main Padded Fist Shell (smooth sculpted profile)
-  const fistGeo = new THREE.SphereGeometry(0.46, 32, 26);
-  fistGeo.scale(1.12, 1.06, 1.32);
+  const fistGeo = new THREE.SphereGeometry(0.42, 32, 26);
+  fistGeo.scale(1.1, 1.05, 1.28);
   const fist = new THREE.Mesh(fistGeo, gloveLeatherMat);
   fist.position.set(0, 0.03, -0.14);
   fist.castShadow = true;
-  gloveMesh.add(fist);
+  gloveVisual.add(fist);
 
   // 2. Folded Fingers Padding Cushion at Front-Bottom
-  const foldGeo = new THREE.SphereGeometry(0.32, 24, 18);
-  foldGeo.scale(1.25, 0.65, 0.82);
+  const foldGeo = new THREE.SphereGeometry(0.29, 24, 18);
+  foldGeo.scale(1.22, 0.65, 0.8);
   const fold = new THREE.Mesh(foldGeo, gloveLeatherMat);
-  fold.position.set(0, -0.22, -0.34);
+  fold.position.set(0, -0.2, -0.32);
   fold.rotation.x = 0.25;
   fold.castShadow = true;
-  gloveMesh.add(fold);
+  gloveVisual.add(fold);
 
-  // 3. Curved Padded Thumb tucked on the side
+  // 3. Curved Padded Thumb tucked on the inner-left side
   const thumbGroup = new THREE.Group();
-  const thumbBase = new THREE.Mesh(new THREE.SphereGeometry(0.21, 20, 16), gloveLeatherMat);
+  const thumbBase = new THREE.Mesh(new THREE.SphereGeometry(0.19, 20, 16), gloveLeatherMat);
   thumbBase.scale.set(0.85, 1.15, 1.35);
   thumbBase.castShadow = true;
-  const thumbTip = new THREE.Mesh(new THREE.SphereGeometry(0.16, 18, 14), gloveLeatherMat);
+  const thumbTip = new THREE.Mesh(new THREE.SphereGeometry(0.15, 18, 14), gloveLeatherMat);
   thumbTip.scale.set(0.9, 1.0, 1.1);
-  thumbTip.position.set(0.06, -0.1, -0.2);
+  thumbTip.position.set(-0.06, -0.09, -0.18);
   thumbGroup.add(thumbBase, thumbTip);
-  thumbGroup.position.set(-0.42, -0.04, -0.02);
-  thumbGroup.rotation.set(0.28, -0.25, 0.35);
-  gloveMesh.add(thumbGroup);
+  thumbGroup.position.set(0.38, -0.04, -0.02);
+  thumbGroup.rotation.set(0.28, 0.25, -0.35);
+  gloveVisual.add(thumbGroup);
 
   // 4. White Stitched Seam Piping around glove edge
-  const seam = new THREE.Mesh(new THREE.TorusGeometry(0.43, 0.018, 10, 32), seamMat);
+  const seam = new THREE.Mesh(new THREE.TorusGeometry(0.39, 0.018, 10, 32), seamMat);
   seam.rotation.y = Math.PI / 2;
   seam.scale.set(1.1, 0.96, 1.0);
-  seam.position.set(-0.08, 0.02, -0.12);
-  gloveMesh.add(seam);
+  seam.position.set(0.08, 0.02, -0.12);
+  gloveVisual.add(seam);
 
   // 5. Padded White Wrist Cuff & Black Velcro Strap
-  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.37, 0.36, 26), whiteLeatherMat);
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.34, 0.34, 26), whiteLeatherMat);
   cuff.rotation.x = Math.PI / 2;
-  cuff.position.set(0, 0, 0.36);
+  cuff.position.set(0, 0, 0.34);
   cuff.castShadow = true;
-  gloveMesh.add(cuff);
+  gloveVisual.add(cuff);
 
-  const strap = new THREE.Mesh(new THREE.CylinderGeometry(0.365, 0.38, 0.16, 26), darkStrapMat);
+  const strap = new THREE.Mesh(new THREE.CylinderGeometry(0.335, 0.35, 0.15, 26), darkStrapMat);
   strap.rotation.x = Math.PI / 2;
-  strap.position.set(0, 0, 0.42);
+  strap.position.set(0, 0, 0.40);
   strap.castShadow = true;
-  gloveMesh.add(strap);
+  gloveVisual.add(strap);
 
   // Gold/Orange mechanical wrist ring connecting cleanly into the spring
   const collarMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 });
-  const wristRing = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.045, 12, 24), collarMat);
-  wristRing.position.set(0, 0, 0.55);
-  gloveMesh.add(wristRing);
+  const wristRing = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.042, 12, 24), collarMat);
+  wristRing.position.set(0, 0, 0.52);
+  gloveVisual.add(wristRing);
 
   scene.add(gloveMesh);
 
@@ -367,10 +371,10 @@ function updateGloveAndSpringTransform(arcLift = 0) {
   gloveMesh.rotateZ(0.12);
 
   // Anchor origin slightly below and behind the resting glove
-  const originPos = gloveBasePos.clone().add(new THREE.Vector3(0.08, -0.32, 0.85));
+  const originPos = gloveBasePos.clone().add(new THREE.Vector3(0.18, -0.42, 1.05));
 
-  // Wrist attachment point in world space (local z = +0.55 on gloveMesh)
-  const wristOffset = new THREE.Vector3(0, 0, 0.55 * gloveMesh.scale.z);
+  // Wrist attachment point in world space (local z = -0.52 behind the glove fist)
+  const wristOffset = new THREE.Vector3(0, 0, -0.52 * gloveMesh.scale.z);
   wristOffset.applyQuaternion(gloveMesh.quaternion);
   const wristPos = gloveMesh.position.clone().add(wristOffset);
 
