@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Pop It 3D - Quebra-Cabeça & ASMR</title>
+  <script>
+    if (location.protocol.indexOf('http') === 0 && !location.pathname.endsWith('/') && !location.pathname.endsWith('.html')) {
+      location.replace(location.pathname + '/' + location.search + location.hash);
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      font-family: 'Fredoka', sans-serif;
+    }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      touch-action: none;
+    }
+    .ui-layer {
+      position: relative;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .interactive {
+      pointer-events: auto;
+    }
+    .toy-btn {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 5px 0 rgba(0,0,0,0.18), 0 8px 15px rgba(0,0,0,0.1);
+    }
+    .toy-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.18), 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .toy-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(10px);
+      border: 3px solid rgba(255, 255, 255, 0.94);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+    .modes-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .modes-bar {
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="flex flex-col justify-between h-screen w-screen overflow-hidden">
+
+  <!-- Container 3D -->
+  <div id="canvas-container"></div>
+
+  <!-- TOPO: Cabeçalho, Modelos e Status -->
+  <header class="ui-layer w-full p-2.5 sm:p-4 flex flex-col gap-2.5 max-w-5xl mx-auto">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <!-- Voltar + Título e Progresso -->
+      <div class="flex items-center gap-2 interactive">
+        <a href="../index.html" title="Voltar ao Menu Principal" class="toy-btn bg-white hover:bg-slate-50 text-slate-800 font-bold w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-xl sm:text-2xl border-2 border-white">
+          🏠
+        </a>
+        <div class="toy-card px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl flex items-center gap-2.5">
+          <div class="text-2xl sm:text-3xl">🫧</div>
+          <div>
+            <h1 class="text-base sm:text-xl font-bold text-slate-800 leading-tight">Pop It 3D</h1>
+            <p id="phase-badge" class="text-xs sm:text-sm font-semibold text-pink-600">
+              Fase 1: Monte as Peças (0/4)
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles de Som e Reiniciar -->
+      <div class="flex items-center gap-2 interactive">
+        <button id="sound-toggle" type="button" class="toy-btn bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3.5 py-2.5 rounded-2xl flex items-center gap-1.5 text-sm sm:text-base">
+          <span id="sound-icon">🔊</span>
+          <span class="hidden sm:inline" id="sound-text">Som: ON</span>
+        </button>
+        <button id="reset-btn" type="button" class="toy-btn bg-rose-500 hover:bg-rose-400 text-white font-bold px-3.5 py-2.5 rounded-2xl flex items-center gap-1.5 text-sm sm:text-base">
+          <span>🔄</span>
+          <span class="hidden xs:inline sm:inline">Reiniciar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Seletor de Modelos de Pop It (15 Fases com Rolagem Horizontal) -->
+    <div class="toy-card p-2 rounded-2xl flex items-center gap-2 overflow-x-auto modes-bar interactive">
+      <div id="model-selector" class="flex items-center gap-1.5 sm:gap-2 min-w-max px-1"></div>
+    </div>
+  </header>
+
+  <!-- CENTRO: Modal de Celebração -->
+  <div id="celebration-modal" class="ui-layer hidden fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 z-50">
+    <div class="toy-card p-6 sm:p-8 rounded-3xl max-w-sm w-full text-center interactive transform transition-all scale-100">
+      <div class="text-6xl mb-3">🎉🫧</div>
+      <h2 class="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">Fase Concluída!</h2>
+      <p class="text-slate-600 mb-6 text-sm sm:text-base">Você montou o quebra-cabeça e estourou os dois lados (frente e verso) deste Pop It!</p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button type="button" onclick="flipBoard()" class="toy-btn bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3 px-5 rounded-2xl flex-1">
+          🔄 Virar Novamente
+        </button>
+        <button type="button" onclick="nextModel()" class="toy-btn bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-5 rounded-2xl flex-1">
+          ⏭️ Próxima Fase
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RODAPÉ: Instruções e Ações Rápidas -->
+  <footer class="ui-layer w-full p-2.5 sm:p-4 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
+    <div class="toy-card px-4 py-2 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm text-slate-700 font-semibold interactive w-full sm:w-auto justify-center">
+      <span id="instruction-icon" class="text-xl">🧩</span>
+      <span id="instruction-text">Arraste as peças 3D até o molde central para montar o Pop It!</span>
+    </div>
+
+    <div class="flex items-center gap-2 interactive w-full sm:w-auto justify-center">
+      <button id="auto-solve-btn" type="button" onclick="autoAssembleRemaining()" class="toy-btn bg-violet-500 hover:bg-violet-400 text-white font-bold px-4 py-2.5 rounded-2xl flex items-center gap-1.5 text-sm sm:text-base w-full sm:w-auto justify-center">
+        <span>✨</span> <span>Auto-Montar</span>
+      </button>
+
+      <div id="pop-controls" class="hidden w-full sm:w-auto">
+        <button type="button" onclick="flipBoard()" class="toy-btn bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-5 py-2.5 rounded-2xl flex items-center gap-2 text-sm sm:text-base w-full sm:w-auto justify-center">
+          <span>🔄</span> <span>Virar Bandeja</span>
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <script src="audio.js"></script>
+  <script src="models.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
