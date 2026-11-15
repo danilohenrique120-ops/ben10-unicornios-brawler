@@ -1,4 +1,4 @@
-// Pop It 3D - Sistema de Áudio Híbrido (Web Audio API + WAV Fallback)
+// Pop It 3D - Sistema de Áudio Web Audio API (com desbloqueio completo Mobile/Tablet/Desktop + WAV Fallback)
 window.PopItAudio = (() => {
   class SoundSystem {
     constructor() {
@@ -7,6 +7,7 @@ window.PopItAudio = (() => {
       this.enabled = true;
       this.unlocked = false;
       this.wavCache = {};
+      this.audioPool = {};
       this.buildWavFallbacks();
     }
 
@@ -40,6 +41,10 @@ window.PopItAudio = (() => {
     buildWavFallbacks() {
       try {
         const sr = 22050;
+        // 1. Silent 20ms WAV to unlock iOS/iPadOS Media Audio Channel
+        this.wavCache.silent = this.createWavUrl(new Float32Array(Math.floor(sr * 0.02)), sr);
+
+        // 2. Pop WAV
         const popLen = Math.floor(sr * 0.12);
         const popSamples = new Float32Array(popLen);
         let phase = 0;
@@ -52,6 +57,7 @@ window.PopItAudio = (() => {
         }
         this.wavCache.pop = this.createWavUrl(popSamples, sr);
 
+        // 3. Snap WAV
         const snapLen = Math.floor(sr * 0.14);
         const snapSamples = new Float32Array(snapLen);
         phase = 0;
@@ -64,6 +70,7 @@ window.PopItAudio = (() => {
         }
         this.wavCache.snap = this.createWavUrl(snapSamples, sr);
 
+        // 4. Pickup WAV
         const pickLen = Math.floor(sr * 0.09);
         const pickSamples = new Float32Array(pickLen);
         phase = 0;
@@ -75,6 +82,13 @@ window.PopItAudio = (() => {
           pickSamples[i] = Math.sin(phase) * env * 0.65;
         }
         this.wavCache.pickup = this.createWavUrl(pickSamples, sr);
+
+        Object.keys(this.wavCache).forEach(k => {
+          const el = new Audio(this.wavCache[k]);
+          el.preload = 'auto';
+          el.playsInline = true;
+          this.audioPool[k] = el;
+        });
       } catch (e) {
         console.warn('Erro ao criar cache WAV:', e);
       }
@@ -86,7 +100,7 @@ window.PopItAudio = (() => {
         const url = this.wavCache[type];
         if (!url) return;
         const audio = new Audio(url);
-        audio.volume = 0.78;
+        audio.volume = 0.85;
         audio.playbackRate = playbackRate;
         audio.play().catch(() => {});
       } catch (_) {}
@@ -106,12 +120,19 @@ window.PopItAudio = (() => {
         if (this.ctx && this.ctx.state === 'suspended') {
           this.ctx.resume().catch(() => {});
         }
-        if (this.ctx && !this.unlocked) {
-          const buffer = this.ctx.createBuffer(1, 1, 22050);
-          const source = this.ctx.createBufferSource();
-          source.buffer = buffer;
-          source.connect(this.ctx.destination);
-          if (source.start) source.start(0);
+        if (!this.unlocked) {
+          if (this.ctx) {
+            const buffer = this.ctx.createBuffer(1, 1, 22050);
+            const source = this.ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(this.ctx.destination);
+            if (source.start) source.start(0);
+          }
+          // Unlock iOS/iPadOS media session so Web Audio is audible even if ringer switch is muted
+          if (this.audioPool.silent) {
+            this.audioPool.silent.volume = 0.01;
+            this.audioPool.silent.play().catch(() => {});
+          }
           this.unlocked = true;
         }
       } catch (_) {}
@@ -120,7 +141,7 @@ window.PopItAudio = (() => {
     setEnabled(nextEnabled) {
       this.enabled = Boolean(nextEnabled);
       if (this.masterGain && this.ctx) {
-        this.masterGain.gain.setTargetAtTime(this.enabled ? 0.95 : 0, this.ctx.currentTime, 0.015);
+        this.masterGain.gain.setValueAtTime(this.enabled ? 0.95 : 0, this.ctx.currentTime);
       }
       if (this.enabled) {
         this.init();
@@ -135,11 +156,19 @@ window.PopItAudio = (() => {
         if (fallbackType) this.playFallbackWav(fallbackType, rate);
         return;
       }
-      if (this.ctx.state === 'suspended') {
-        if (fallbackType) this.playFallbackWav(fallbackType, rate);
-        this.ctx.resume().catch(() => {});
+      const dest = this.masterGain || this.ctx.destination;
+      if (this.ctx.state === 'running') {
+        callback(this.ctx, dest);
       } else {
-        callback(this.ctx, this.masterGain || this.ctx.destination);
+        this.ctx.resume().then(() => {
+          if (this.enabled && this.ctx && this.ctx.state === 'running') {
+            callback(this.ctx, dest);
+          } else if (fallbackType) {
+            this.playFallbackWav(fallbackType, rate);
+          }
+        }).catch(() => {
+          if (fallbackType) this.playFallbackWav(fallbackType, rate);
+        });
       }
     }
 
@@ -152,8 +181,8 @@ window.PopItAudio = (() => {
         osc.frequency.setValueAtTime(340, now);
         osc.frequency.linearRampToValueAtTime(590, now + 0.085);
 
-        gain.gain.setValueAtTime(0.35, now);
-        gain.gain.linearRampToValueAtTime(0.001, now + 0.09);
+        gain.gain.setValueAtTime(0.38, now);
+        gain.gain.exponentialRampToValueAtTime(0.002, now + 0.09);
 
         osc.connect(gain);
         gain.connect(dest);
@@ -171,21 +200,20 @@ window.PopItAudio = (() => {
         osc.frequency.setValueAtTime(260, now);
         osc.frequency.linearRampToValueAtTime(840, now + 0.12);
 
-        gain.gain.setValueAtTime(0.5, now);
-        gain.gain.linearRampToValueAtTime(0.001, now + 0.13);
+        gain.gain.setValueAtTime(0.55, now);
+        gain.gain.exponentialRampToValueAtTime(0.002, now + 0.13);
 
         osc.connect(gain);
         gain.connect(dest);
         osc.start(now);
         osc.stop(now + 0.14);
 
-        // Chime suave de encaixe perfeito
         const ding = ctx.createOscillator();
         const dGain = ctx.createGain();
         ding.type = 'sine';
         ding.frequency.setValueAtTime(1046.5, now + 0.04);
-        dGain.gain.setValueAtTime(0.18, now + 0.04);
-        dGain.gain.linearRampToValueAtTime(0.001, now + 0.22);
+        dGain.gain.setValueAtTime(0.22, now + 0.04);
+        dGain.gain.exponentialRampToValueAtTime(0.002, now + 0.22);
         ding.connect(dGain);
         dGain.connect(dest);
         ding.start(now + 0.04);
@@ -205,24 +233,24 @@ window.PopItAudio = (() => {
         osc.type = 'sine';
 
         const pitchOffset = (variation % 8) * 28 + (flipped ? 45 : 0);
-        const startFreq = 310 + pitchOffset + Math.random() * 18;
+        const startFreq = 320 + pitchOffset + Math.random() * 18;
         const endFreq = 92 + Math.random() * 14;
 
         osc.frequency.setValueAtTime(startFreq, now);
         osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.095);
 
-        gain.gain.setValueAtTime(0.68, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.105);
+        gain.gain.setValueAtTime(0.75, now);
+        gain.gain.exponentialRampToValueAtTime(0.002, now + 0.105);
 
         // 2. Estalo seco da membrana virando
         const snapOsc = ctx.createOscillator();
         const snapGain = ctx.createGain();
         snapOsc.type = 'triangle';
-        snapOsc.frequency.setValueAtTime(940 + Math.random() * 160, now);
+        snapOsc.frequency.setValueAtTime(960 + Math.random() * 160, now);
         snapOsc.frequency.exponentialRampToValueAtTime(210, now + 0.045);
 
-        snapGain.gain.setValueAtTime(0.42, now);
-        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        snapGain.gain.setValueAtTime(0.48, now);
+        snapGain.gain.exponentialRampToValueAtTime(0.002, now + 0.05);
 
         osc.connect(gain);
         gain.connect(dest);
@@ -248,8 +276,8 @@ window.PopItAudio = (() => {
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(freq, now);
 
-          gain.gain.setValueAtTime(0.38, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.002, now + 0.34);
 
           osc.connect(gain);
           gain.connect(dest);
@@ -270,8 +298,8 @@ window.PopItAudio = (() => {
         osc.frequency.linearRampToValueAtTime(165, now + 0.28);
 
         gain.gain.setValueAtTime(0.06, now);
-        gain.gain.linearRampToValueAtTime(0.38, now + 0.13);
-        gain.gain.linearRampToValueAtTime(0.001, now + 0.29);
+        gain.gain.linearRampToValueAtTime(0.42, now + 0.13);
+        gain.gain.linearRampToValueAtTime(0.002, now + 0.29);
 
         osc.connect(gain);
         gain.connect(dest);
@@ -283,8 +311,14 @@ window.PopItAudio = (() => {
 
   const instance = new SoundSystem();
 
-  ['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach(evt => {
+  ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach(evt => {
     window.addEventListener(evt, () => instance.init(), { passive: true, capture: true });
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && instance.enabled && instance.ctx && instance.ctx.state === 'suspended') {
+      instance.ctx.resume().catch(() => {});
+    }
   });
 
   return instance;
