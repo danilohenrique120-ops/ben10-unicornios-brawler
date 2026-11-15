@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Máquina de Escrever Divertida</title>
+  <script>
+    if (location.protocol.indexOf('http') === 0 && !location.pathname.endsWith('/') && !location.pathname.endsWith('.html')) {
+      location.replace(location.pathname + '/' + location.search + location.hash);
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@700&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 15%, #fef3c7 0%, #fde68a 45%, #f59e0b 100%);
+      font-family: 'Fredoka', 'Trebuchet MS', sans-serif;
+      color: #1e293b;
+    }
+    .app-shell {
+      height: 100%;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom)) 10px;
+      gap: 8px;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pill-btn {
+      border: 3px solid #fff;
+      background: linear-gradient(180deg, #fff 0%, #f1f5f9 100%);
+      color: #1e293b;
+      border-radius: 16px;
+      padding: 7px 12px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+      font-size: clamp(13px, 2.2vw, 15px);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 4px 0 rgba(15, 23, 42, 0.2), 0 6px 14px rgba(0,0,0,0.12);
+      transition: transform 0.1s;
+    }
+    .pill-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.2);
+    }
+    .pill-btn.icon-only {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      justify-content: center;
+      font-size: 21px;
+    }
+    .pill-btn.active {
+      background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%);
+      color: #fff;
+    }
+    .stars-badge {
+      background: linear-gradient(180deg, #fffbeb 0%, #fef08a 100%);
+      border: 3px solid #fff;
+      border-radius: 16px;
+      padding: 6px 12px;
+      font-weight: 700;
+      font-size: 16px;
+      color: #92400e;
+      box-shadow: 0 4px 0 rgba(15, 23, 42, 0.18);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* CHALLENGE BANNER */
+    .challenge-banner {
+      background: rgba(255, 255, 255, 0.92);
+      border: 3px solid #fff;
+      border-radius: 18px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+      flex-shrink: 0;
+    }
+    .challenge-banner.hidden {
+      display: none;
+    }
+    .challenge-emoji {
+      font-size: 30px;
+    }
+    .challenge-letters {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .challenge-letter {
+      width: 30px;
+      height: 34px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      color: #475569;
+      font-family: 'Courier Prime', monospace;
+      font-weight: 700;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 3px solid #94a3b8;
+      transition: all 0.15s;
+    }
+    .challenge-letter.next {
+      background: #fef08a;
+      color: #854d0e;
+      border-color: #eab308;
+      transform: scale(1.12);
+    }
+    .challenge-letter.done {
+      background: #22c55e;
+      color: #fff;
+      border-color: #15803d;
+    }
+
+    /* PAPER CARRIAGE & ROLLER */
+    .paper-stage {
+      flex: 1 1 auto;
+      min-height: 155px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      position: relative;
+      overflow: hidden;
+    }
+    .paper-carriage {
+      width: min(94%, 660px);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      position: relative;
+      transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .paper-carriage.returning {
+      transition: transform 0.26s cubic-bezier(0.34, 1.4, 0.64, 1);
+    }
+    .paper-sheet {
+      width: 88%;
+      flex: 1 1 auto;
+      max-height: 100%;
+      background: #fffdf7;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 34px,
+        rgba(148, 163, 184, 0.25) 34px,
+        rgba(148, 163, 184, 0.25) 35px
+      );
+      border-radius: 10px 10px 0 0;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.14), inset 0 0 24px rgba(245, 158, 11, 0.08);
+      border: 2px solid #e7e5e4;
+      border-bottom: none;
+      padding: 14px 18px 26px 18px;
+      overflow-y: auto;
+      position: relative;
+    }
+    .paper-sheet.fresh-sheet {
+      animation: freshPaperSlide 0.28s ease-out;
+    }
+    @keyframes freshPaperSlide {
+      from { transform: translateY(40px); opacity: 0.3; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .paper-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .paper-line {
+      min-height: 32px;
+      line-height: 32px;
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      font-family: 'Courier Prime', 'Courier New', monospace;
+      font-size: clamp(20px, 3.6vw, 28px);
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .typed-char {
+      display: inline-block;
+    }
+    .typed-stamp {
+      display: inline-block;
+      font-size: clamp(22px, 3.8vw, 28px);
+      margin: 0 2px;
+    }
+    .just-typed {
+      animation: stampHit 0.14s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes stampHit {
+      0% { transform: scale(1.45); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .type-cursor {
+      display: inline-block;
+      width: 3px;
+      height: 24px;
+      background: #ef4444;
+      margin-left: 2px;
+      border-radius: 2px;
+      animation: blinkCursor 0.8s infinite;
+    }
+    @keyframes blinkCursor {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0.15; }
+    }
+
+    /* Confetti Layer inside Paper */
+    #paper-confetti {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 5;
+    }
+    .confetti-pop {
+      position: absolute;
+      top: 10%;
+      font-size: 24px;
+      animation: confettiFall 1s ease-out forwards;
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(150px) scale(1.2) rotate(220deg); opacity: 0; }
+    }
+
+    /* Chrome Roller Bar & Hammer Typebar */
+    .roller-bar {
+      width: 100%;
+      height: 20px;
+      background: linear-gradient(180deg, #475569 0%, #1e293b 55%, #0f172a 100%);
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+    .roller-knob {
+      width: 16px;
+      height: 28px;
+      background: linear-gradient(180deg, #cbd5e1 0%, #64748b 100%);
+      border-radius: 6px;
+      border: 2px solid #334155;
+      margin-left: -14px;
+      margin-right: -14px;
+    }
+    .typebar-guide {
+      position: absolute;
+      left: 50%;
+      bottom: -2px;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 26px;
+      pointer-events: none;
+      z-index: 6;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .typebar-arm {
+      width: 16px;
+      height: 24px;
+      background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
+      border: 2px solid #475569;
+      border-radius: 6px 6px 2px 2px;
+      transform-origin: bottom center;
+      transform: translateY(14px) scaleY(0.55);
+      opacity: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      font-family: 'Courier Prime', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #0f172a;
+      transition: transform 0.06s ease-out, opacity 0.06s;
+    }
+    .typebar-arm.striking {
+      transform: translateY(-6px) scaleY(1.1);
+      opacity: 1;
+    }
+
+    /* TYPEWRITER BODY (Retro Mint Teal Shell) */
+    .typewriter-body {
+      background: linear-gradient(180deg, #2dd4bf 0%, #0d9488 55%, #0f766e 100%);
+      border: 4px solid #134e4a;
+      border-radius: 26px;
+      padding: 10px 10px 12px 10px;
+      box-shadow: 0 12px 0 #115e59, 0 18px 34px rgba(0,0,0,0.32), inset 0 3px 0 rgba(255,255,255,0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* Ink & Stamps Deck */
+    .tools-deck {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.18);
+      padding: 6px 10px;
+      border-radius: 16px;
+    }
+    .deck-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .deck-label {
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    }
+    .ink-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.28);
+      transition: transform 0.12s;
+    }
+    .ink-dot.active {
+      transform: scale(1.22);
+      box-shadow: 0 0 0 3px #facc15, 0 3px 8px rgba(0,0,0,0.4);
+    }
+    .stamp-btn {
+      width: 32px;
+      height: 30px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.85);
+      background: rgba(255,255,255,0.9);
+      font-size: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.22);
+      transition: transform 0.08s;
+    }
+    .stamp-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.22);
+    }
+
+    /* Mechanical Round Typewriter Keyboard */
+    .typewriter-keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: clamp(3px, 1vw, 7px);
+    }
+    .tw-key {
+      flex: 1 1 0;
+      max-width: 56px;
+      height: clamp(40px, 6.2vh, 52px);
+      border-radius: 50%;
+      border: 3px solid #cbd5e1;
+      background: radial-gradient(circle at 35% 30%, #ffffff 0%, #f1f5f9 75%, #cbd5e1 100%);
+      color: #0f172a;
+      font-family: 'Courier Prime', monospace;
+      font-weight: 700;
+      font-size: clamp(16px, 2.8vw, 22px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #334155, 0 7px 10px rgba(0,0,0,0.3);
+      transition: transform 0.06s, box-shadow 0.06s;
+    }
+    .tw-key:active,
+    .tw-key.pressed {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #334155, 0 2px 4px rgba(0,0,0,0.25);
+      background: radial-gradient(circle at 50% 50%, #fef08a 0%, #fde047 100%);
+    }
+    .tw-key-action {
+      border-radius: 18px;
+      max-width: 64px;
+      background: linear-gradient(180deg, #fb7185 0%, #e11d48 100%);
+      border-color: #ffe4e6;
+      color: #fff;
+      font-family: 'Fredoka', sans-serif;
+      font-size: clamp(16px, 2.8vw, 20px);
+    }
+    .tw-key-punct {
+      max-width: 52px;
+    }
+    .tw-key-space {
+      flex: 3 1 0;
+      max-width: 310px;
+      border-radius: 18px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: clamp(13px, 2.1vw, 15px);
+      letter-spacing: 2px;
+      background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .tw-key-enter {
+      flex: 2 1 0;
+      max-width: 210px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+      border-color: #fef3c7;
+      color: #451a03;
+      font-family: 'Fredoka', sans-serif;
+      font-size: clamp(12px, 2vw, 15px);
+      font-weight: 700;
+    }
+    .tw-key-enter:active,
+    .tw-key-enter.pressed {
+      background: linear-gradient(180deg, #fde047 0%, #f59e0b 100%);
+    }
+    .tw-key-back:active,
+    .tw-key-back.pressed {
+      background: linear-gradient(180deg, #fda4af 0%, #f43f5e 100%);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Navigation & Tools -->
+    <div class="top-bar">
+      <div class="btn-group">
+        <a href="../index.html" class="pill-btn icon-only" title="Voltar ao Menu Principal">🏠</a>
+        <button id="btn-sound" type="button" class="pill-btn icon-only" title="Ligar/Desligar Som">🔊</button>
+        <button id="mode-toggle-btn" type="button" class="pill-btn">🎯 Copiar Palavras</button>
+      </div>
+
+      <div class="btn-group">
+        <div class="stars-badge" title="Estrelas ganhas">⭐ <span id="stars-count">0</span></div>
+        <button id="btn-speak" type="button" class="pill-btn" title="Ler o texto escrito">🗣️ <span class="hide-xs">Ler</span></button>
+        <button id="btn-clear" type="button" class="pill-btn" title="Colocar folha nova">📄 Nova Folha</button>
+      </div>
+    </div>
+
+    <!-- Optional Word Challenge Bar -->
+    <div id="challenge-banner" class="challenge-banner hidden">
+      <span id="challenge-emoji" class="challenge-emoji">☀️</span>
+      <div id="challenge-letters" class="challenge-letters"></div>
+    </div>
+
+    <!-- Paper Carriage & Roller -->
+    <div class="paper-stage">
+      <div id="paper-carriage" class="paper-carriage">
+        <div id="paper-sheet" class="paper-sheet">
+          <div id="paper-scroll" style="height:100%; overflow-y:auto;">
+            <div id="paper-lines" class="paper-lines"></div>
+          </div>
+          <div id="paper-confetti"></div>
+        </div>
+        <div class="roller-bar">
+          <div class="roller-knob"></div>
+          <div class="typebar-guide">
+            <div id="typebar-arm" class="typebar-arm">
+              <span id="typebar-tip">A</span>
+            </div>
+          </div>
+          <div class="roller-knob"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Retro Typewriter Chassis & Round Keys -->
+    <div class="typewriter-body">
+      <div class="tools-deck">
+        <div class="deck-group">
+          <span class="deck-label">🎨 Tinta:</span>
+          <div id="ink-palette" class="deck-group"></div>
+        </div>
+        <div class="deck-group">
+          <span class="deck-label">✨ Carimbos:</span>
+          <div id="stamps-bar" class="deck-group"></div>
+        </div>
+      </div>
+
+      <div id="typewriter-keyboard" class="typewriter-keyboard"></div>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
