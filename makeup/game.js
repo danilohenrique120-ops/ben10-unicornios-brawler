@@ -253,9 +253,9 @@
   function applyBlushStroke(x, y) {
     const c = blushLayer.ctx;
     c.save();
-    Models.traceFaceOvalPath(c, currentModel, S);
+    Models.traceBlushZonesPath(c, currentModel, S);
     c.clip();
-    softDab(c, x, y, 62, activeBlush.hex, 0.14);
+    softDab(c, x, y, 56, activeBlush.hex, 0.16);
     c.restore();
     if (Math.random() > 0.55) spawnPowderPuff(x, y, activeBlush.hex);
   }
@@ -263,9 +263,9 @@
   function applyHighlighterStroke(x, y) {
     const c = highlightLayer.ctx;
     c.save();
-    Models.traceFaceOvalPath(c, currentModel, S);
+    Models.traceHighlighterZonesPath(c, currentModel, S);
     c.clip();
-    softDab(c, x, y, 42, '#fffbeb', 0.16);
+    softDab(c, x, y, 36, '#fffbeb', 0.18);
     c.restore();
     if (Math.random() > 0.6) spawnSparkle(x, y, '#ffffff', 1);
   }
@@ -303,9 +303,12 @@
   function applyGlitterStroke(x, y) {
     const c = glitterLayer.ctx;
     const palette = activeGlitter.colors;
+    c.save();
+    Models.traceGlamZonesPath(c, currentModel, S);
+    c.clip();
     for (let i = 0; i < 4; i++) {
-      const gx = x + (Math.random() - 0.5) * 46;
-      const gy = y + (Math.random() - 0.5) * 46;
+      const gx = x + (Math.random() - 0.5) * 42;
+      const gy = y + (Math.random() - 0.5) * 42;
       const r = 2.5 + Math.random() * 5.2;
       c.fillStyle = palette[Math.floor(Math.random() * palette.length)];
       c.beginPath();
@@ -324,6 +327,7 @@
       }
       c.fill();
     }
+    c.restore();
     if (Math.random() > 0.5) spawnSparkle(x, y, palette[0], 1);
   }
 
@@ -359,33 +363,25 @@
     faceStickers = faceStickers.filter(st => Math.hypot(st.x - nx, st.y - ny) > 0.055);
   }
 
-  function isNearEyes(nx, ny, radius = 0.095) {
-    return ['left', 'right'].some(side => {
-      const e = currentModel.eyes[side];
-      return Math.hypot(nx - e.ix, ny - e.iy) < radius;
-    });
-  }
+  let undoCapturedForStroke = false;
 
-  function isNearBrows(nx, ny) {
-    return ['left', 'right'].some(side => {
-      const b = currentModel.brows[side][1];
-      return Math.hypot(nx - b[0], ny - b[1]) < 0.085;
-    });
-  }
-
-  function isNearLips(nx, ny) {
-    return Math.hypot(nx - 0.5, ny - currentModel.lips.midY) < 0.11;
+  function ensureUndoCaptured() {
+    if (!undoCapturedForStroke) {
+      pushUndo();
+      undoCapturedForStroke = true;
+    }
   }
 
   function applyActiveTool(x, y, prevX, prevY, isTap = false) {
-    if (showBeforeMode) return;
+    if (showBeforeMode || activeTab === 'acc') return;
     const dist = Math.hypot(x - prevX, y - prevY);
     const steps = Math.max(1, Math.ceil(dist / 12));
     const nx = x / S;
     const ny = y / S;
 
     if (activeToolId === 'gems') {
-      if (isTap) {
+      if (isTap && Models.isPointInToolGuide(ctx, currentModel, S, 'gems', x, y)) {
+        ensureUndoCaptured();
         faceStickers.push({
           x: nx,
           y: ny,
@@ -404,51 +400,69 @@
       const sx = prevX + (x - prevX) * t;
       const sy = prevY + (y - prevY) * t;
 
+      // Só aceita pintar / aplicar se o dedo estiver ESTRITAMENTE dentro da área tracejada!
+      if (!Models.isPointInToolGuide(ctx, currentModel, S, activeToolId, sx, sy)) {
+        continue;
+      }
+
       if (activeToolId === 'spa_mask') {
+        ensureUndoCaptured();
         applySpaMaskStroke(sx, sy);
         Audio.playSpaCream();
       } else if (activeToolId === 'spa_sponge') {
+        ensureUndoCaptured();
         applySpaSpongeWipe(sx, sy);
         Audio.playRinseWipe();
       } else if (activeToolId === 'blush') {
+        ensureUndoCaptured();
         applyBlushStroke(sx, sy);
         Audio.playPowderBrush();
       } else if (activeToolId === 'highlighter') {
+        ensureUndoCaptured();
         applyHighlighterStroke(sx, sy);
         Audio.playPowderBrush();
       } else if (activeToolId === 'eyeshadow') {
+        ensureUndoCaptured();
         applyEyeshadowStroke(sx, sy);
         Audio.playPowderBrush();
       } else if (activeToolId === 'lipstick') {
+        ensureUndoCaptured();
         applyLipstickStroke(sx, sy);
         Audio.playLipstickGlide();
       } else if (activeToolId === 'glitter') {
+        ensureUndoCaptured();
         applyGlitterStroke(sx, sy);
         Audio.playGlitterTick();
       } else if (activeToolId === 'remover') {
+        ensureUndoCaptured();
         applyMakeupRemover(sx, sy);
         Audio.playRinseWipe();
       }
     }
 
-    // Ferramentas progressivas de precisão (Delineador, Rímel, Sobrancelha, Gloss)
-    if (activeToolId === 'eyeliner' && isNearEyes(nx, ny, 0.105)) {
-      linerState.color = activeLinerColor.hex;
-      linerState.progress = Math.min(1, linerState.progress + (isTap ? 0.25 : 0.06));
-      Audio.playPrecisionStroke();
-      if (linerState.progress > 0.92 && Math.random() > 0.7) spawnSparkle(x, y, '#ffffff', 1);
-    } else if (activeToolId === 'mascara' && isNearEyes(nx, ny, 0.105)) {
-      mascaraState.color = activeLinerColor.hex;
-      mascaraState.level = Math.min(1, mascaraState.level + (isTap ? 0.22 : 0.055));
-      Audio.playPrecisionStroke();
-    } else if (activeToolId === 'brows' && isNearBrows(nx, ny)) {
-      browState.color = activeLinerColor.hex;
-      browState.level = Math.min(1, browState.level + (isTap ? 0.22 : 0.055));
-      Audio.playPrecisionStroke();
-    } else if (activeToolId === 'gloss' && isNearLips(nx, ny)) {
-      glossLevel = Math.min(1, glossLevel + (isTap ? 0.25 : 0.065));
-      Audio.playLipstickGlide();
-      if (Math.random() > 0.55) spawnSparkle(x, y, '#ffffff', 1);
+    // Ferramentas progressivas de precisão — também restritas estritamente ao traço tracejado!
+    if (['eyeliner', 'mascara', 'brows', 'gloss'].includes(activeToolId)) {
+      if (!Models.isPointInToolGuide(ctx, currentModel, S, activeToolId, x, y)) return;
+
+      ensureUndoCaptured();
+      if (activeToolId === 'eyeliner') {
+        linerState.color = activeLinerColor.hex;
+        linerState.progress = Math.min(1, linerState.progress + (isTap ? 0.25 : 0.06));
+        Audio.playPrecisionStroke();
+        if (linerState.progress > 0.92 && Math.random() > 0.7) spawnSparkle(x, y, '#ffffff', 1);
+      } else if (activeToolId === 'mascara') {
+        mascaraState.color = activeLinerColor.hex;
+        mascaraState.level = Math.min(1, mascaraState.level + (isTap ? 0.22 : 0.055));
+        Audio.playPrecisionStroke();
+      } else if (activeToolId === 'brows') {
+        browState.color = activeLinerColor.hex;
+        browState.level = Math.min(1, browState.level + (isTap ? 0.22 : 0.055));
+        Audio.playPrecisionStroke();
+      } else if (activeToolId === 'gloss') {
+        glossLevel = Math.min(1, glossLevel + (isTap ? 0.25 : 0.065));
+        Audio.playLipstickGlide();
+        if (Math.random() > 0.55) spawnSparkle(x, y, '#ffffff', 1);
+      }
     }
   }
 
@@ -663,8 +677,8 @@
     ptr.isDown = true;
     ptr.visible = true;
 
+    undoCapturedForStroke = false;
     if (!showBeforeMode) {
-      pushUndo();
       applyActiveTool(pt.x, pt.y, pt.x, pt.y, true);
     }
   });
@@ -688,6 +702,7 @@
     try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
     ptr.activeId = null;
     ptr.isDown = false;
+    undoCapturedForStroke = false;
   }
 
   canvas.addEventListener('pointerup', releasePtr);
