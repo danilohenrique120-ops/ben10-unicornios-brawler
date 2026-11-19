@@ -56,6 +56,7 @@
   let accessories = { tiara: 'none', earrings: 'none', necklace: 'none' };
 
   let showBeforeMode = false;
+  let showGuide = true;
   let flashOpacity = 0;
   let particles = [];
 
@@ -553,6 +554,11 @@
 
       // 11. Acessórios (Tiara/Coroa, Brincos, Colar)
       Models.drawAccessories(ctx, currentModel, S, accessories, timeSec);
+
+      // 11.5. Guia Visual Tracejado (mostra onde aplicar a ferramenta selecionada)
+      if (showGuide && activeTab !== 'acc') {
+        Models.drawToolGuide(ctx, currentModel, S, activeToolId, timeSec);
+      }
     }
 
     // 12. Partículas (Espuma, Pó, Brilhos)
@@ -942,9 +948,11 @@
     spawnSparkle(S * 0.5, S * 0.48, '#fef08a', 14);
     spawnSparkle(S * 0.5, S * 0.55, '#f472b6', 10);
 
-    // Exporta imagem limpa sem o cursor de ferramenta
+    // Exporta imagem limpa sem o cursor de ferramenta nem guia tracejado
     const wasVisible = ptr.visible;
+    const wasGuide = showGuide;
     ptr.visible = false;
+    showGuide = false;
     setTimeout(() => {
       try {
         const link = document.createElement('a');
@@ -953,6 +961,7 @@
         link.click();
       } catch (_) {}
       ptr.visible = wasVisible;
+      showGuide = wasGuide;
     }, 60);
   }
 
@@ -968,6 +977,16 @@
       document.getElementById('btn-sound').textContent = next ? '🔊' : '🔇';
       if (next) Audio.playUiSelect(620);
     });
+
+    const guideBtn = document.getElementById('btn-guide');
+    if (guideBtn) {
+      guideBtn.classList.toggle('active', showGuide);
+      guideBtn.addEventListener('click', () => {
+        Audio.playUiSelect(590);
+        showGuide = !showGuide;
+        guideBtn.classList.toggle('active', showGuide);
+      });
+    }
 
     document.getElementById('btn-undo').addEventListener('click', performUndo);
 

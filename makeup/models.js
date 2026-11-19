@@ -474,6 +474,93 @@ window.MakeupModels = (() => {
     }
   }
 
+  // Guia visual tracejado animado indicando exatamente onde aplicar cada produto no rosto
+  function drawToolGuide(ctx, model, S, toolId, timeSec) {
+    if (!toolId || toolId === 'remover') return;
+
+    const pulse = 0.68 + Math.sin(timeSec * 5) * 0.28;
+    const dashOffset = -timeSec * 28;
+
+    function strokeDashed(color) {
+      ctx.save();
+      ctx.setLineDash([12, 9]);
+      ctx.lineDashOffset = dashOffset;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      // Halo escuro suave para contraste em qualquer tom de pele
+      ctx.strokeStyle = `rgba(15, 23, 42, ${0.42 * pulse})`;
+      ctx.lineWidth = 7.5 * (S / 1024);
+      ctx.stroke();
+      // Linha tracejada colorida/brilhante principal
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 4.2 * (S / 1024);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (toolId === 'blush') {
+      ['left', 'right'].forEach(side => {
+        const ch = model.cheeks[side];
+        ctx.beginPath();
+        ctx.ellipse(ch.x * S, ch.y * S, ch.rx * S, ch.ry * S, 0, 0, Math.PI * 2);
+        strokeDashed(`rgba(255, 182, 217, ${pulse})`);
+      });
+    } else if (toolId === 'highlighter') {
+      // Ponte/pontinha do nariz + topo das maçãs do rosto
+      ctx.beginPath();
+      ctx.ellipse(model.nose.x * S, (model.nose.y - 0.01) * S, 0.022 * S, 0.042 * S, 0, 0, Math.PI * 2);
+      strokeDashed(`rgba(254, 240, 138, ${pulse})`);
+      ['left', 'right'].forEach(side => {
+        const ch = model.cheeks[side];
+        ctx.beginPath();
+        ctx.ellipse(ch.x * S, (ch.y - 0.032) * S, ch.rx * 0.72 * S, ch.ry * 0.36 * S, side === 'left' ? -0.22 : 0.22, 0, Math.PI * 2);
+        strokeDashed(`rgba(254, 240, 138, ${pulse})`);
+      });
+    } else if (toolId === 'eyeshadow') {
+      ['left', 'right'].forEach(side => {
+        traceEyelidPath(ctx, model.eyes[side], S, side === 'right');
+        strokeDashed(`rgba(233, 213, 255, ${pulse})`);
+      });
+    } else if (toolId === 'eyeliner' || toolId === 'mascara') {
+      ['left', 'right'].forEach(side => {
+        const eye = model.eyes[side];
+        const isRight = side === 'right';
+        const wingDir = isRight ? 1 : -1;
+        const xEnd = (isRight ? eye.x2 : eye.x1) * S;
+        const yEnd = (isRight ? eye.y2 : eye.y1) * S;
+        ctx.beginPath();
+        ctx.moveTo(eye.x1 * S, (eye.y1 - 0.006) * S);
+        ctx.quadraticCurveTo(eye.tx * S, (eye.ty - 0.012) * S, eye.x2 * S, (eye.y2 - 0.006) * S);
+        if (toolId === 'eyeliner') {
+          ctx.lineTo(xEnd + wingDir * 0.026 * S, yEnd - 0.022 * S);
+        }
+        strokeDashed(`rgba(255, 255, 255, ${pulse})`);
+      });
+    } else if (toolId === 'brows') {
+      ['left', 'right'].forEach(side => {
+        const pts = model.brows[side];
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0] * S, pts[0][1] * S);
+        ctx.quadraticCurveTo(pts[1][0] * S, pts[1][1] * S, pts[2][0] * S, pts[2][1] * S);
+        strokeDashed(`rgba(253, 230, 138, ${pulse})`);
+      });
+    } else if (toolId === 'lipstick' || toolId === 'gloss') {
+      traceLipsPath(ctx, model, S);
+      strokeDashed(toolId === 'gloss' ? `rgba(255, 255, 255, ${pulse})` : `rgba(255, 192, 224, ${pulse})`);
+    } else if (toolId === 'spa_mask' || toolId === 'spa_sponge') {
+      traceFaceOvalPath(ctx, model, S);
+      strokeDashed(`rgba(186, 230, 253, ${pulse})`);
+    } else if (toolId === 'glitter' || toolId === 'gems') {
+      // Sugestão fofa nas têmporas/maçãs superiores
+      ['left', 'right'].forEach(side => {
+        const ch = model.cheeks[side];
+        ctx.beginPath();
+        ctx.arc((ch.x + (side === 'left' ? -0.022 : 0.022)) * S, (ch.y - 0.04) * S, 0.028 * S, 0, Math.PI * 2);
+        strokeDashed(`rgba(254, 240, 138, ${pulse})`);
+      });
+    }
+  }
+
   return {
     MODELS,
     traceLipsPath,
@@ -485,6 +572,7 @@ window.MakeupModels = (() => {
     drawMascaraLashes,
     drawBrowTint,
     drawLipGlossShine,
-    drawAccessories
+    drawAccessories,
+    drawToolGuide
   };
 })();
